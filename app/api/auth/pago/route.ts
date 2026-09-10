@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { procesarPago } from '@/lib/auth';
+import { procesarPago } from '@/lib/auth-appwrite';
 
 export async function POST(request: NextRequest) {
   try {

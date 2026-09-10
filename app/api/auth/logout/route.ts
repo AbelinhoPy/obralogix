@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cerrarSesion } from '@/lib/auth';
+import { cerrarSesion } from '@/lib/auth-appwrite';
 
 export async function POST(request: NextRequest) {
   try {

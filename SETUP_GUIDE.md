@@ -1,41 +1,64 @@
 # 🚀 Guía de Configuración - ObraLogix SaaS
 
-## 🔑 Configuración de Supabase
+## 🔑 Configuración con Appwrite
 
-Para que el sistema de autenticación funcione correctamente, necesitas configurar las variables de entorno de Supabase.
+El proyecto ahora usa **Appwrite** como backend, que ofrece plan gratuito sin límite de proyectos (a diferencia de Supabase que solo permite 2 proyectos gratis).
 
-### 1. Crear un proyecto en Supabase
+### 1. Crear cuenta en Appwrite
 
-1. Ve a [supabase.com](https://supabase.com) y crea una cuenta gratuita
-2. Crea un nuevo proyecto llamado "obralogix"
-3. Espera a que el proyecto se inicialice (2-3 minutos)
+1. Ve a [https://cloud.appwrite.io](https://cloud.appwrite.io)
+2. Haz clic en "Sign Up"
+3. Regístrate con GitHub, Google o email
+4. Verifica tu email si es necesario
 
-### 2. Ejecutar el esquema de base de datos
+### 2. Crear un nuevo proyecto
 
-1. En tu proyecto de Supabase, ve a "SQL Editor"
-2. Copia el contenido del archivo `supabase/schema.sql`
-3. Pégalo en el editor SQL y ejecútalo
-4. Esto creará todas las tablas necesarias para el sistema
+1. En el dashboard de Appwrite, haz clic en "Create Project"
+2. Nombre del proyecto: `obralogix`
+3. Selecciona la región más cercana (South America si está disponible)
+4. Haz clic en "Create"
 
-### 3. Configurar las variables de entorno
+### 3. Obtener las credenciales
+
+1. Cuando el proyecto esté listo, ve a **Settings** → **API Keys**
+2. Haz clic en "Create API Key"
+3. Nombre: `ObraLogix Web`
+4. Permisos: Selecciona todos los permisos necesarios
+5. Copia el **Project ID**
+
+### 4. Configurar las variables de entorno
 
 Crea o edita el archivo `.env.local` en la raíz del proyecto:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key_de_supabase
+NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+NEXT_PUBLIC_APPWRITE_PROJECT_ID=tu-project-id
+NEXT_PUBLIC_APPWRITE_DATABASE_ID=obralogix_db
 ```
 
-Para obtener estos valores:
-1. En tu proyecto de Supabase, ve a "Settings" → "API"
-2. Copia la "Project URL" y pégala en `NEXT_PUBLIC_SUPABASE_URL`
-3. Copia la "anon public key" y pégala en `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+### 5. Configurar base de datos y colecciones
 
-### 4. Habilitar autenticación por email
+Sigue la guía detallada en `appwrite/setup.md` para crear:
+- Base de datos `obralogix_db`
+- 9 colecciones con sus atributos
+- Configuración de permisos
 
-1. En Supabase, ve a "Authentication" → "Providers"
-2. Habilita el proveedor "Email"
-3. Configura las opciones de confirmación de email según tus preferencias
+**Resumen rápido de colecciones:**
+- `empresas` - Datos de empresas/constructoras
+- `usuarios` - Usuarios del sistema
+- `obras` - Proyectos de construcción
+- `trabajadores` - Personal de cuadrillas
+- `asistencias_diarias` - Control de asistencia y jornales
+- `bitacoras` - Registro diario de obra
+- `herramientas` - Inventario del pañol
+- `tableros_electricos` - Seguimiento de tableros
+- `suscripciones_pagos` - Historial de pagos
+
+### 6. Habilitar autenticación por email
+
+1. Ve a **Auth** → **Settings**
+2. Habilita **Email/Password**
+3. Configura las opciones según prefieras
 
 ## 🧪 Probar el sistema
 
@@ -67,7 +90,7 @@ npm run dev
 
 ## 🔒 Seguridad
 
-- El sistema usa Supabase Auth para gestión de sesiones
+- El sistema usa Appwrite Auth para gestión de sesiones
 - Las contraseñas se hashean automáticamente
 - Las API routes están protegidas
 - El middleware protege las rutas de la aplicación
@@ -77,7 +100,7 @@ npm run dev
 Para desplegar en producción:
 
 1. Configura las variables de entorno en tu plataforma de hosting
-2. Ejecuta el esquema de base de datos en tu instancia de Supabase de producción
+2. Configura la base de datos de Appwrite para producción
 3. Construye la aplicación:
 ```bash
 npm run build
@@ -90,4 +113,12 @@ npm run build
 Si encuentras problemas:
 - Verifica que las variables de entorno estén correctamente configuradas
 - Revisa la consola del navegador para errores
-- Asegúrate de que el esquema de base de datos se haya ejecutado correctamente en Supabase
+- Consulta la guía detallada en `appwrite/setup.md`
+- Asegúrate de que todas las colecciones estén creadas con los atributos correctos
+
+## 🔄 Migración desde Supabase
+
+Si tenías una versión con Supabase:
+- El código ha sido migrado completamente a Appwrite
+- Solo necesitas configurar Appwrite siguiendo esta guía
+- Los datos existentes de Supabase no se migran automáticamente
