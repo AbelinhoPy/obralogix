@@ -215,11 +215,30 @@ export default function BitacoraView() {
                   <div className="flex items-center justify-between text-xs text-[#9AA2AE] pt-3 border-t border-white/10">
                     <span>Responsable técnico: <strong className="text-[#F4F1EA]">{bitacora.responsable}</strong></span>
                     <button
-                      onClick={() => toast.success("Enlace del reporte copiado para compartir por WhatsApp")}
+                      onClick={() => {
+                        const obraAsoc = obras.find((o) => o.id === bitacora.obraId);
+                        const texto = `📋 *OBRALOGIX - REPORTE DIARIO DE OBRA*\n` +
+                          `🏢 *Empresa:* ${empresaActual.nombre}\n` +
+                          `🏗️ *Obra:* ${obraAsoc?.nombre || "Obra"} (${obraAsoc?.codigo || ""})\n` +
+                          `📅 *Fecha:* ${bitacora.fecha} | 🌤️ *Clima:* ${bitacora.clima}\n` +
+                          `👷 *Personal en Obra:* ${bitacora.personalPresente} operarios\n\n` +
+                          `✅ *Avance Físico:* \n${bitacora.avanceDescripcion}\n\n` +
+                          (bitacora.trabasNovedades ? `⚠️ *Novedades / Trabas:* \n${bitacora.trabasNovedades}\n\n` : "") +
+                          `👤 *Responsable:* ${bitacora.responsable}\n` +
+                          `_Reporte generado en ObraLogix SaaS_`;
+
+                        if (typeof navigator !== "undefined" && navigator.clipboard) {
+                          navigator.clipboard.writeText(texto).catch(() => {});
+                        }
+                        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+                        window.open(url, "_blank");
+                        toast.success("¡Reporte copiado y abierto en WhatsApp!");
+                      }}
                       className="inline-flex items-center gap-1.5 text-[#FF6A1F] hover:text-[#FFC93C] font-semibold cursor-pointer transition-colors"
+                      title="Enviar resumen diario formateado por WhatsApp"
                     >
                       <Share2 className="h-3.5 w-3.5" />
-                      Compartir por WhatsApp
+                      <span>Compartir por WhatsApp</span>
                     </button>
                   </div>
 

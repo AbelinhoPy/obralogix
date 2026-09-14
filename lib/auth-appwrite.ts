@@ -1,5 +1,36 @@
-import { account, databases, DATABASE_ID, COLLECTIONS, generateId } from './appwrite';
-import { ID, Query } from 'appwrite';
+import { Client, Account, Databases, ID, Query } from 'appwrite';
+
+// Configuración de Appwrite del lado del cliente
+const client = new Client();
+
+client
+  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '');
+
+// Clientes para diferentes servicios
+export const account = new Account(client);
+export const databases = new Databases(client);
+
+// ID de la base de datos (se configura en Appwrite)
+export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'obralogix_db';
+
+// IDs de las colecciones (se configuran en Appwrite)
+export const COLLECTIONS = {
+  EMPRESAS: 'empresas',
+  USUARIOS: 'usuarios',
+  OBRAS: 'obras',
+  TRABAJADORES: 'trabajadores',
+  ASISTENCIAS_DIARIAS: 'asistencias_diarias',
+  BITACORAS: 'bitacoras',
+  HERRAMIENTAS: 'herramientas',
+  TABLEROS_ELECTRICOS: 'tableros_electricos',
+  SUSCRIPCIONES_PAGOS: 'suscripciones_pagos',
+};
+
+// Función helper para generar IDs únicos
+export const generateId = () => ID.unique();
+
+export { Query };
 
 export interface AuthUser {
   id: string;
@@ -33,6 +64,9 @@ export interface PagoData {
 // Registrar nuevo usuario y empresa
 export async function registrarUsuario(data: RegistroData) {
   try {
+    // Si había una sesión previa, cerrarla para evitar error session_already_exists
+    await account.deleteSession('current').catch(() => {});
+
     // 1. Crear usuario en Appwrite Auth
     const user = await account.create(
       ID.unique(),
@@ -41,14 +75,15 @@ export async function registrarUsuario(data: RegistroData) {
       data.nombre
     );
 
-    // 2. Crear sesión automáticamente
+    // 2. Crear sesión automáticamente en el cliente
     const session = await account.createEmailPasswordSession(data.email, data.password);
 
     // 3. Crear empresa en la base de datos
+    const empresaId = ID.unique();
     const empresa = await databases.createDocument(
       DATABASE_ID,
       COLLECTIONS.EMPRESAS,
-      ID.unique(),
+      empresaId,
       {
         nombre: data.nombreEmpresa,
         tipo: data.tipoEmpresa,
@@ -62,10 +97,11 @@ export async function registrarUsuario(data: RegistroData) {
     );
 
     // 4. Crear usuario en la tabla usuarios vinculado a la empresa
+    const usuarioId = ID.unique();
     const usuario = await databases.createDocument(
       DATABASE_ID,
       COLLECTIONS.USUARIOS,
-      ID.unique(),
+      usuarioId,
       {
         empresa_id: empresa.$id,
         email: data.email,
@@ -77,12 +113,24 @@ export async function registrarUsuario(data: RegistroData) {
       }
     );
 
+    // Persistir cookie para middleware y navegación
+    if (typeof document !== 'undefined') {
+      document.cookie = `obralogix_session=${session.$id}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+      localStorage.setItem('obralogix_view', 'app');
+    }
+
     return {
       success: true,
       user: user,
       session: session,
-      empresa: empresa,
-      usuario: usuario,
+      empresa: {
+        ...empresa,
+        id: empresa.$id
+      },
+      usuario: {
+        ...usuario,
+        id: usuario.$id
+      },
     };
   } catch (error) {
     console.error('Error en registro:', error);
@@ -96,6 +144,9 @@ export async function registrarUsuario(data: RegistroData) {
 // Iniciar sesión
 export async function iniciarSesion(data: LoginData) {
   try {
+    // Si había una sesión previa, cerrarla para evitar error session_already_exists
+    await account.deleteSession('current').catch(() => {});
+
     const session = await account.createEmailPasswordSession(data.email, data.password);
     const user = await account.get();
 
@@ -106,23 +157,40 @@ export async function iniciarSesion(data: LoginData) {
       [Query.equal('email', data.email)]
     );
 
-    if (usuarios.documents.length === 0) {
-      throw new Error('Usuario no encontrado en la base de datos');
+    let usuario: any = null;
+    let empresa: any = null;
+
+    if (usuarios.documents.length > 0) {
+      usuario = usuarios.documents[0];
+      try {
+        empresa = await databases.getDocument(
+          DATABASE_ID,
+          COLLECTIONS.EMPRESAS,
+          usuario.empresa_id
+        );
+      } catch (err) {
+        console.warn('Empresa no encontrada en BD:', err);
+      }
     }
 
-    const usuario = usuarios.documents[0];
-    const empresa = await databases.getDocument(
-      DATABASE_ID,
-      COLLECTIONS.EMPRESAS,
-      usuario.empresa_id
-    );
+    // Persistir cookie para middleware y sesión cliente
+    if (typeof document !== 'undefined') {
+      document.cookie = `obralogix_session=${session.$id}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+      localStorage.setItem('obralogix_view', 'app');
+    }
 
     return {
       success: true,
       user: user,
       session: session,
-      usuario: usuario,
-      empresa: empresa,
+      usuario: usuario ? {
+        ...usuario,
+        id: usuario.$id
+      } : { id: user.$id, email: user.email, nombre: user.name, rol: 'admin' },
+      empresa: empresa ? {
+        ...empresa,
+        id: empresa.$id
+      } : { id: 'emp-1', nombre: 'Construlógica Servicios Eléctricos', tipo: 'electrico', ruc: '80094521-3', moneda: 'PYG (₲)', contacto: data.email },
     };
   } catch (error) {
     console.error('Error en login:', error);
@@ -136,10 +204,19 @@ export async function iniciarSesion(data: LoginData) {
 // Cerrar sesión
 export async function cerrarSesion() {
   try {
-    await account.deleteSession('current');
+    await account.deleteSession('current').catch(() => {});
+    if (typeof document !== 'undefined') {
+      document.cookie = 'obralogix_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      localStorage.removeItem('obralogix_view');
+      localStorage.removeItem('obralogix_store');
+    }
     return { success: true };
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
+    if (typeof document !== 'undefined') {
+      document.cookie = 'obralogix_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      localStorage.removeItem('obralogix_view');
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error desconocido',

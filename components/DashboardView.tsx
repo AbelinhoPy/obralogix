@@ -22,7 +22,7 @@ interface DashboardViewProps {
 }
 
 export default function DashboardView({ onNavigateTab }: DashboardViewProps) {
-  const { empresaActual, obras, trabajadores, herramientas, tableros } = useObraStore();
+  const { empresaActual, obras, trabajadores, herramientas, tableros, rolActual } = useObraStore();
 
   const obrasEmpresa = obras.filter((o) => o.empresaId === empresaActual.id);
   const trabajadoresEmpresa = trabajadores.filter((t) => t.empresaId === empresaActual.id);
@@ -173,56 +173,78 @@ export default function DashboardView({ onNavigateTab }: DashboardViewProps) {
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-            {obrasEmpresa.map((obra) => (
-              <Card key={obra.id} className="hover:border-white/25 transition-all">
-                <CardContent className="p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="font-mono text-xs font-bold text-[#FFC93C] bg-[#232833] border border-white/10 px-2 py-0.5 rounded">
-                          {obra.codigo}
-                        </span>
-                        <Badge variant={obra.estado === "En Ejecución" ? "success" : "secondary"}>
-                          {obra.estado}
-                        </Badge>
-                        <span className="text-[10px] font-bold text-[#9AA2AE] uppercase tracking-wider">
-                          {obra.tipo === "electrico" ? "⚡ Eléctrico" : "🏗️ Civil"}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-[#F4F1EA] text-base font-heading">{obra.nombre}</h3>
-                      <p className="text-xs text-[#9AA2AE] mt-0.5">Cliente: <strong className="text-[#F4F1EA]">{obra.cliente}</strong> • {obra.ubicacion}</p>
-                    </div>
-
-                    <div className="text-right sm:self-center">
-                      <span className="text-2xl font-black text-[#F4F1EA] font-heading">{obra.progreso}%</span>
-                      <p className="text-[10px] text-[#9AA2AE]">Avance físico</p>
-                    </div>
-                  </div>
-
-                  {/* Barra de Progreso Industrial */}
-                  <div className="w-full bg-[#12151b] rounded-full h-2.5 mb-3 overflow-hidden border border-white/5">
-                    <div 
-                      className="h-2.5 rounded-full bg-gradient-to-r from-[#FF6A1F] to-[#FFC93C] transition-all duration-500" 
-                      style={{ width: `${obra.progreso}%` }}
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#9AA2AE] pt-3 border-t border-white/10">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5 text-[#5B8DC0]" />
-                      <span>{obra.trabajadoresAsignados} funcionarios asignados</span>
-                    </div>
-                    <div>
-                      <span>Responsable: <strong className="text-[#F4F1EA]">{obra.responsable}</strong></span>
-                    </div>
-                    <div>
-                      <span className="text-[#9AA2AE]">Presupuesto: </span>
-                      <strong className="text-[#3BC97C] font-mono">{formatoPYG(obra.presupuestoPYG)}</strong>
-                    </div>
-                  </div>
-                </CardContent>
+            {obrasEmpresa.length === 0 ? (
+              <Card className="border-dashed border-white/15 bg-white/5 p-8 text-center space-y-3">
+                <Building2 className="h-10 w-10 text-[#9AA2AE] mx-auto opacity-40" />
+                <h3 className="font-bold text-[#F4F1EA] text-sm">No tienes obras registradas aún</h3>
+                <p className="text-xs text-[#9AA2AE] max-w-sm mx-auto">
+                  Comienza cargando tu primera obra civil o eléctrica para dar seguimiento al avance y costos.
+                </p>
+                <button
+                  onClick={() => onNavigateTab("obras")}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF6A1F] text-[#181205] text-xs font-bold rounded-xl hover:bg-[#E14E10] transition-all cursor-pointer mx-auto"
+                >
+                  + Cargar mi primera Obra
+                </button>
               </Card>
-            ))}
+            ) : (
+              obrasEmpresa.map((obra) => (
+                <Card key={obra.id} className="hover:border-white/25 transition-all">
+                  <CardContent className="p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="font-mono text-xs font-bold text-[#FFC93C] bg-[#232833] border border-white/10 px-2 py-0.5 rounded">
+                            {obra.codigo}
+                          </span>
+                          <Badge variant={obra.estado === "En Ejecución" ? "success" : "secondary"}>
+                            {obra.estado}
+                          </Badge>
+                          <span className="text-[10px] font-bold text-[#9AA2AE] uppercase tracking-wider">
+                            {obra.tipo === "electrico" ? "⚡ Eléctrico" : "🏗️ Civil"}
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-[#F4F1EA] text-base font-heading">{obra.nombre}</h3>
+                        <p className="text-xs text-[#9AA2AE] mt-0.5">Cliente: <strong className="text-[#F4F1EA]">{obra.cliente}</strong> • {obra.ubicacion}</p>
+                      </div>
+
+                      <div className="text-right sm:self-center">
+                        <span className="text-2xl font-black text-[#F4F1EA] font-heading">{obra.progreso}%</span>
+                        <p className="text-[10px] text-[#9AA2AE]">Avance físico</p>
+                      </div>
+                    </div>
+
+                    {/* Barra de Progreso Industrial */}
+                    <div className="w-full bg-[#12151b] rounded-full h-2.5 mb-3 overflow-hidden border border-white/5">
+                      <div 
+                        className="h-2.5 rounded-full bg-gradient-to-r from-[#FF6A1F] to-[#FFC93C] transition-all duration-500" 
+                        style={{ width: `${obra.progreso}%` }}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#9AA2AE] pt-3 border-t border-white/10">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-[#5B8DC0]" />
+                        <span>{obra.trabajadoresAsignados} funcionarios asignados</span>
+                      </div>
+                      <div>
+                        <span>Responsable: <strong className="text-[#F4F1EA]">{obra.responsable}</strong></span>
+                      </div>
+                      {rolActual === "admin" ? (
+                        <div>
+                          <span className="text-[#9AA2AE]">Presupuesto: </span>
+                          <strong className="text-[#3BC97C] font-mono">{formatoPYG(obra.presupuestoPYG)}</strong>
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-[#9AA2AE] italic">
+                          Presupuesto: Confidencial (Solo Dueño/Admin)
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
 

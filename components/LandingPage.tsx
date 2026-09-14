@@ -37,12 +37,15 @@ export default function LandingPage({ onOpenApp }: LandingPageProps) {
           </nav>
 
           <div className="landing-nav-actions">
-            <button onClick={() => handleOpenAuth()} className="landing-nav-ghost">
-              Ingresar al Sistema
+            <button onClick={() => onOpenApp("dashboard")} className="landing-nav-cta" style={{ background: '#3BC97C', color: '#181205', fontWeight: 'bold', cursor: 'pointer' }}>
+              🚀 Entrar al Sistema
             </button>
-            <button onClick={() => handleOpenAuth("Empresa")} className="landing-nav-cta">
+            <a href="/login" className="landing-nav-ghost" style={{ textDecoration: 'none' }}>
+              Iniciar Sesión
+            </a>
+            <a href="/registro" className="landing-nav-cta" style={{ textDecoration: 'none' }}>
               Registrarse
-            </button>
+            </a>
           </div>
         </div>
       </header>
@@ -62,12 +65,12 @@ export default function LandingPage({ onOpenApp }: LandingPageProps) {
             </p>
 
             <div className="landing-hero-actions">
-              <button onClick={() => handleOpenAuth("Empresa")} className="landing-btn-primary">
-                <span>Empezar Prueba Gratis</span>
+              <button onClick={() => onOpenApp("dashboard")} className="landing-btn-primary" style={{ cursor: 'pointer' }}>
+                <span>🚀 Entrar al Sistema (Probar en Vivo)</span>
                 <span>→</span>
               </button>
-              <a href="#modulos" className="landing-btn-ghost">
-                Ver los módulos
+              <a href="/registro" className="landing-btn-ghost" style={{ cursor: 'pointer', textDecoration: 'none' }}>
+                Crear Cuenta Nueva
               </a>
             </div>
 

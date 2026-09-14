@@ -12,7 +12,8 @@ import {
   CheckSquare, 
   Square, 
   ChevronRight, 
-  ShoppingBag
+  ShoppingBag,
+  Download
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -75,49 +76,59 @@ export default function TablerosView() {
 
       {/* Selector de Tablero */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {tablerosEmpresa.map((tab) => {
-          const esActivo = tableroSeleccionado?.id === tab.id;
-          return (
-            <div
-              key={tab.id}
-              onClick={() => setTableroActivoId(tab.id)}
-              className={`cursor-pointer rounded-2xl border p-4 transition-all ${
-                esActivo
-                  ? "border-[#FF6A1F] bg-[#221a15] shadow-lg shadow-orange-500/10"
-                  : "border-white/10 bg-[#1e2229] hover:border-white/20"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <span className="font-mono text-xs font-bold text-[#FFC93C] bg-[#12151b] border border-white/10 px-2 py-0.5 rounded">
-                    {tab.codigo}
+        {tablerosEmpresa.length === 0 ? (
+          <div className="col-span-full rounded-2xl border border-dashed border-white/15 p-12 text-center text-[#9AA2AE] bg-[#1e2229] space-y-2">
+            <Cpu className="mx-auto h-12 w-12 text-[#9AA2AE]/40 mb-1" />
+            <h3 className="font-bold text-[#F4F1EA]">No hay tableros eléctricos en taller</h3>
+            <p className="text-xs text-[#9AA2AE] max-w-sm mx-auto">
+              Este módulo permite gestionar el pipeline de ensamble, BOM de materiales y listas de compra para obras eléctricas.
+            </p>
+          </div>
+        ) : (
+          tablerosEmpresa.map((tab) => {
+            const esActivo = tableroSeleccionado?.id === tab.id;
+            return (
+              <div
+                key={tab.id}
+                onClick={() => setTableroActivoId(tab.id)}
+                className={`cursor-pointer rounded-2xl border p-4 transition-all ${
+                  esActivo
+                    ? "border-[#FF6A1F] bg-[#221a15] shadow-lg shadow-orange-500/10"
+                    : "border-white/10 bg-[#1e2229] hover:border-white/20"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <span className="font-mono text-xs font-bold text-[#FFC93C] bg-[#12151b] border border-white/10 px-2 py-0.5 rounded">
+                      {tab.codigo}
+                    </span>
+                    <h3 className="font-bold text-[#F4F1EA] text-sm mt-1 font-heading">{tab.nombre}</h3>
+                    <p className="text-xs text-[#9AA2AE] mt-0.5">Cliente: {tab.cliente}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xl font-black text-[#FF6A1F] font-heading">{tab.progreso}%</span>
+                    <p className="text-[10px] text-[#9AA2AE]">Avance</p>
+                  </div>
+                </div>
+
+                <div className="w-full bg-[#12151b] rounded-full h-2 mb-3 overflow-hidden border border-white/5">
+                  <div
+                    className="h-2 rounded-full bg-gradient-to-r from-[#FF6A1F] to-[#FFC93C] transition-all duration-300"
+                    style={{ width: `${tab.progreso}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-[#9AA2AE] pt-2 border-t border-white/10">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5 text-[#FF6A1F]" />
+                    Fase: <strong className="text-[#F4F1EA]">{tab.faseActual}</strong>
                   </span>
-                  <h3 className="font-bold text-[#F4F1EA] text-sm mt-1 font-heading">{tab.nombre}</h3>
-                  <p className="text-xs text-[#9AA2AE] mt-0.5">Cliente: {tab.cliente}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xl font-black text-[#FF6A1F] font-heading">{tab.progreso}%</span>
-                  <p className="text-[10px] text-[#9AA2AE]">Avance</p>
+                  <span className="text-[11px] text-[#9AA2AE]">Entrega: {tab.fechaEntregaObjetivo}</span>
                 </div>
               </div>
-
-              <div className="w-full bg-[#12151b] rounded-full h-2 mb-3 overflow-hidden border border-white/5">
-                <div
-                  className="h-2 rounded-full bg-gradient-to-r from-[#FF6A1F] to-[#FFC93C] transition-all duration-300"
-                  style={{ width: `${tab.progreso}%` }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-[#9AA2AE] pt-2 border-t border-white/10">
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5 text-[#FF6A1F]" />
-                  Fase: <strong className="text-[#F4F1EA]">{tab.faseActual}</strong>
-                </span>
-                <span className="text-[11px] text-[#9AA2AE]">Entrega: {tab.fechaEntregaObjetivo}</span>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {/* Detalle y Fases del Tablero Seleccionado */}
@@ -256,10 +267,51 @@ export default function TablerosView() {
 
                 <div className="pt-2">
                   <button
-                    onClick={() => toast.success("Orden de compra de materiales generada")}
-                    className="w-full rounded-xl border border-white/15 bg-white/5 py-2.5 text-xs font-bold text-[#F4F1EA] hover:bg-white/10 shadow-xs cursor-pointer transition-all"
+                    onClick={() => {
+                      if (!tableroSeleccionado) return;
+                      const materialesPorComprar = tableroSeleccionado.materiales.filter((m) => !m.comprado);
+                      if (materialesPorComprar.length === 0) {
+                        toast.success("Todos los materiales para este tablero ya están en stock.");
+                        return;
+                      }
+
+                      const contenido = `========================================================
+OBRALOGIX - SOLICITUD DE COMPRA / REQUISICIÓN DE MATERIALES
+========================================================
+Empresa: ${empresaActual.nombre} (RUC: ${empresaActual.ruc})
+Tablero: ${tableroSeleccionado.codigo} - ${tableroSeleccionado.nombre}
+Cliente: ${tableroSeleccionado.cliente}
+Tensión / Corriente: ${tableroSeleccionado.tension} | ${tableroSeleccionado.corrienteNominal}
+Gabinete: ${tableroSeleccionado.gabineteTipo}
+Fecha Solicitud: ${new Date().toLocaleDateString("es-PY")}
+Responsable Técnico: ${tableroSeleccionado.responsable}
+
+--------------------------------------------------------
+INSUMOS ELÉCTRICOS SOLICITADOS PARA COMPRA (BOM FALTANTE):
+--------------------------------------------------------
+${materialesPorComprar.map((m, i) => `${i + 1}. [ ] ${m.descripcion} - Cantidad: ${m.cantidad} u.`).join("\n")}
+
+--------------------------------------------------------
+Fecha Límite Requerida en Taller: ${tableroSeleccionado.fechaEntregaObjetivo}
+Emitido digitalmente vía ObraLogix SaaS
+========================================================
+`;
+
+                      const blob = new Blob([contenido], { type: "text/plain;charset=utf-8;" });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", url);
+                      link.setAttribute("download", `Orden_Compra_${tableroSeleccionado.codigo}.txt`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                      toast.success(`¡Orden de compra generada para ${materialesPorComprar.length} insumos!`);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2.5 text-xs font-bold text-[#F4F1EA] hover:bg-white/10 shadow-xs cursor-pointer transition-all"
                   >
-                    Generar Solicitud de Compra
+                    <Download className="h-3.5 w-3.5 text-[#FF6A1F]" />
+                    <span>Descargar Solicitud de Compra (.TXT)</span>
                   </button>
                 </div>
               </CardContent>

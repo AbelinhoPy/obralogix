@@ -17,7 +17,7 @@ import {
 import toast from "react-hot-toast";
 
 export default function ObrasView() {
-  const { empresaActual, obras, agregarObra, actualizarProgresoObra } = useObraStore();
+  const { empresaActual, obras, agregarObra, actualizarProgresoObra, rolActual } = useObraStore();
   const [modalAbierto, setModalAbierto] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<string>("todas");
 
@@ -202,10 +202,17 @@ export default function ObrasView() {
                     <Calendar className="h-3.5 w-3.5 text-[#9AA2AE] shrink-0" />
                     <span>Inicio: {obra.fechaInicio}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 font-bold text-[#3BC97C] font-mono">
-                    <DollarSign className="h-3.5 w-3.5 shrink-0" />
-                    <span>{formatoPYG(obra.presupuestoPYG)}</span>
-                  </div>
+                  {rolActual === "admin" ? (
+                    <div className="flex items-center gap-1.5 font-bold text-[#3BC97C] font-mono">
+                      <DollarSign className="h-3.5 w-3.5 shrink-0" />
+                      <span>{formatoPYG(obra.presupuestoPYG)}</span>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-[#9AA2AE] italic flex items-center gap-1">
+                      <DollarSign className="h-3 w-3 text-[#9AA2AE]/50 shrink-0" />
+                      <span>Confidencial (Admin)</span>
+                    </div>
+                  )}
                 </div>
 
               </CardContent>

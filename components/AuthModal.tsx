@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useObraStore } from "@/lib/store";
+import { registrarUsuario, iniciarSesion, procesarPago } from "@/lib/auth-appwrite";
 import { 
   Building2, 
   CreditCard, 
@@ -65,21 +66,15 @@ export default function AuthModal({
     }
 
     try {
-      const response = await fetch('/api/auth/registro', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          nombre: nombreUsuario,
-          nombreEmpresa,
-          ruc,
-          tipoEmpresa,
-          plan: planSeleccionado,
-        }),
+      const data = await registrarUsuario({
+        email,
+        password,
+        nombre: nombreUsuario,
+        nombreEmpresa,
+        ruc,
+        tipoEmpresa,
+        plan: planSeleccionado as any,
       });
-
-      const data = await response.json();
 
       if (!data.success) {
         toast.error(data.error || 'Error en el registro');
@@ -87,16 +82,17 @@ export default function AuthModal({
       }
 
       // Guardar datos temporales para el paso de pago
-      sessionStorage.setItem('registroTemporal', JSON.stringify({
-        empresaId: data.empresa.id,
+      const datosRegistro = {
+        empresaId: data.empresa?.id || (data.empresa as any)?.$id,
         plan: planSeleccionado,
         email,
-      }));
+      };
+      sessionStorage.setItem('registroTemporal', JSON.stringify(datosRegistro));
 
       toast.success("¡Registro exitoso! Procede al pago.");
       setModo("pago");
     } catch (error) {
-      toast.error('Error de conexión. Intenta nuevamente.');
+      toast.error('Error al registrar cuenta. Intenta nuevamente.');
     }
   };
 
@@ -106,18 +102,19 @@ export default function AuthModal({
     try {
       const registroTemporal = JSON.parse(sessionStorage.getItem('registroTemporal') || '{}');
       
-      const response = await fetch('/api/auth/pago', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      if (!registroTemporal.empresaId) {
+        toast.error('Error: No se encontró el ID de empresa. Por favor vuelve a registrarte.');
+        return;
+      }
+      
+      const data = await procesarPago(
+        {
           metodoPago,
           plan: planSeleccionado,
           monto: preciosPlan[planSeleccionado]?.valor || 0,
-          empresaId: registroTemporal.empresaId,
-        }),
-      });
-
-      const data = await response.json();
+        },
+        registroTemporal.empresaId
+      );
 
       if (!data.success) {
         toast.error(data.error || 'Error en el procesamiento del pago');
@@ -135,16 +132,17 @@ export default function AuthModal({
       };
 
       useObraStore.setState((state) => ({
-        empresas: [...state.empresas, nuevaEmpresa],
+        empresas: [nuevaEmpresa, ...state.empresas.filter(e => e.id !== nuevaEmpresa.id)],
         empresaActual: nuevaEmpresa
       }));
 
       sessionStorage.removeItem('registroTemporal');
+      localStorage.setItem('obralogix_view', 'app');
       toast.success("¡Pago aprobado! Cuenta y empresa activadas.");
       onSuccess();
       onClose();
     } catch (error) {
-      toast.error('Error de conexión. Intenta nuevamente.');
+      toast.error('Error en el pago. Intenta nuevamente.');
     }
   };
 
@@ -156,43 +154,45 @@ export default function AuthModal({
     }
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
+      const data = await iniciarSesion({ email, password });
 
       if (!data.success) {
         toast.error(data.error || 'Error en el inicio de sesión');
         return;
       }
 
-      // Actualizar el store con los datos del usuario
-      const empresaFormateada = {
-        id: data.empresa.id,
-        nombre: data.empresa.nombre,
-        tipo: data.empresa.tipo,
-        ruc: data.empresa.ruc,
-        moneda: data.empresa.moneda,
-        contacto: data.empresa.contacto
-      };
+      // Actualizar el store con los datos del usuario y empresa
+      if (data.empresa) {
+        const empresaFormateada = {
+          id: data.empresa.id || (data.empresa as any).$id,
+          nombre: data.empresa.nombre,
+          tipo: data.empresa.tipo || 'electrico',
+          ruc: data.empresa.ruc || '80000000-1',
+          moneda: data.empresa.moneda || 'PYG (₲)',
+          contacto: data.empresa.contacto || email
+        };
 
-      useObraStore.setState((state) => ({
-        empresas: [empresaFormateada],
-        empresaActual: empresaFormateada,
-        usuarioAutenticado: data.usuario,
-      }));
+        useObraStore.setState((state) => ({
+          empresas: [empresaFormateada, ...state.empresas.filter(e => e.id !== empresaFormateada.id)],
+          empresaActual: empresaFormateada,
+          usuarioAutenticado: data.usuario,
+          rolActual: (data.usuario?.rol as any) || "admin"
+        }));
 
-      // Cargar datos desde Supabase
-      useObraStore.getState().cargarDatosDesdeSupabase(data.empresa.id);
+        useObraStore.getState().cargarDatosDesdeAppwrite(empresaFormateada.id);
+      } else {
+        useObraStore.setState({
+          usuarioAutenticado: data.usuario,
+          rolActual: (data.usuario?.rol as any) || "admin"
+        });
+      }
 
+      localStorage.setItem('obralogix_view', 'app');
       toast.success("¡Bienvenido de nuevo a ObraLogix!");
       onSuccess();
       onClose();
     } catch (error) {
-      toast.error('Error de conexión. Intenta nuevamente.');
+      toast.error('Error al iniciar sesión. Intenta nuevamente.');
     }
   };
 

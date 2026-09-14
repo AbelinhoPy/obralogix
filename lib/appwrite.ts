@@ -1,4 +1,4 @@
-import { Client, Account, Databases, ID } from 'appwrite';
+import { Client, Account, Databases, ID, Query } from 'appwrite';
 
 // Configuración de Appwrite
 const client = new Client();
@@ -10,6 +10,9 @@ client
 // Clientes para diferentes servicios
 export const account = new Account(client);
 export const databases = new Databases(client);
+
+// Exportar Query para consultas
+export { Query };
 
 // ID de la base de datos (se configura en Appwrite)
 export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'obralogix_db';
@@ -25,6 +28,7 @@ export const COLLECTIONS = {
   HERRAMIENTAS: 'herramientas',
   TABLEROS_ELECTRICOS: 'tableros_electricos',
   SUSCRIPCIONES_PAGOS: 'suscripciones_pagos',
+  TAREAS: 'tareas',
 };
 
 // Función helper para generar IDs únicos

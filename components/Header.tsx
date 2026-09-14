@@ -20,7 +20,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onVolverLanding }: HeaderProps) {
-  const { empresaActual, empresas, setEmpresaActual, obras, herramientas, usuarioAutenticado } = useObraStore();
+  const { empresaActual, empresas, setEmpresaActual, obras, herramientas, usuarioAutenticado, rolActual, setRolActual } = useObraStore();
   const { logout } = useAuth();
 
   const obrasEmpresa = obras.filter((o) => o.empresaId === empresaActual.id);
@@ -115,8 +115,23 @@ export default function Header({ onVolverLanding }: HeaderProps) {
               <span>{new Date().toLocaleDateString("es-PY", { weekday: "short", day: "numeric", month: "short" })}</span>
             </div>
 
+            {/* Selector y Badge de Rol Activo */}
+            <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#232833] px-2.5 py-1 text-xs">
+              <span className="text-[10px] font-bold uppercase text-[#9AA2AE] hidden sm:inline">Rol:</span>
+              <select
+                value={rolActual}
+                onChange={(e) => setRolActual(e.target.value as any)}
+                className="bg-transparent font-bold text-xs cursor-pointer focus:outline-none text-[#FFC93C]"
+                title="Cambiar rol activo para pruebas de permisos"
+              >
+                <option value="admin" className="bg-[#1e2229] text-[#F4F1EA]">👑 Admin (Dueño)</option>
+                <option value="supervisor" className="bg-[#1e2229] text-[#F4F1EA]">👷 Supervisor</option>
+                <option value="operario" className="bg-[#1e2229] text-[#F4F1EA]">🛠️ Operario</option>
+              </select>
+            </div>
+
             {/* Usuario y Logout */}
-            {usuarioAutenticado && (
+            {usuarioAutenticado ? (
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-1.5 rounded-xl bg-[#232833] border border-white/10 px-3 py-1.5 text-xs">
                   <User className="h-3.5 w-3.5 text-[#FFC93C]" />
@@ -131,6 +146,16 @@ export default function Header({ onVolverLanding }: HeaderProps) {
                   <span className="hidden sm:inline">Salir</span>
                 </button>
               </div>
+            ) : (
+              <button
+                onClick={() => {
+                  if (onVolverLanding) onVolverLanding();
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#F4F1EA] hover:bg-white/10 transition-all cursor-pointer"
+              >
+                <User className="h-3.5 w-3.5 text-[#FF6A1F]" />
+                <span>Iniciar Sesión</span>
+              </button>
             )}
 
           </div>
